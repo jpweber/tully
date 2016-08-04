@@ -6,6 +6,12 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+// TODO: create mechanism for renewing and revoking my own tokens
+// generate tokens in the same way and write them out and revoke etc.
+// always be sure to read in new token before performing actions
+// my temp tokens need to not have a ttl so they can sit waiting for a time
+// that a container is launched on said host and can then use that token
+
 func main() {
 	// setup the docker event listening
 	endpoint := "unix:///var/run/docker.sock"
@@ -33,6 +39,10 @@ func main() {
 
 			// save temp token
 			persistData(fileLocation(), elem.Actor.Attributes["name"], tokens)
+
+			// rotate my own tokens
+			v.tokenLookup("self")
+			log.Println("My current active token that I will revoke is", v.selfTokenToRevoke)
 		}
 	}
 

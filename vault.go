@@ -8,11 +8,12 @@ import (
 )
 
 type IntVault struct {
-	client       *vaultapi.Client
-	wrapInfo     *vaultapi.SecretWrapInfo
-	tempToken    string
-	permToken    string
-	permAccessor string
+	client            *vaultapi.Client
+	wrapInfo          *vaultapi.SecretWrapInfo
+	tempToken         string
+	permToken         string
+	permAccessor      string
+	selfTokenToRevoke string
 }
 
 func defaultWrappingLookupFunc(operation, path string) string {
@@ -28,6 +29,26 @@ func (v *IntVault) NewVaultClient() {
 	}
 	// set the wrap ttl
 	// v.client.SetWrappingLookupFunc(defaultWrappingLookupFunc)
+}
+
+func (v *IntVault) tokenLookup(token string) {
+	// Check for an empty token. If empty just lookup self
+	if token == "self" {
+		// lookup self and safe results as selfTokenToRevoke
+		selfSecret, err := v.client.Auth().Token().LookupSelf()
+		if err != nil {
+			log.Println(err)
+		}
+		fmt.Printf("%+v\n", selfSecret)
+		v.setSelfTokenToRevoke(selfSecret)
+	} else {
+		v.client.Auth().Token().Lookup(token)
+	}
+
+}
+
+func (v *IntVault) setSelfTokenToRevoke(secret *vaultapi.Secret) {
+	v.selfTokenToRevoke = secret.Data["id"].(string)
 }
 
 func (v *IntVault) createPermToken(requestor string) {

@@ -33,7 +33,7 @@ func makeAppDir(path, appName string) string {
 
 }
 
-func readAccessor(path string) string {
+func readLocalAccessor(path string) string {
 	dat, err := ioutil.ReadFile(path + "/accessor")
 	if err != nil {
 		panic(err)
@@ -56,7 +56,7 @@ func persistData(path, appName string, tokens map[string]string) {
 	if _, err := os.Stat(path + "/accessor"); err == nil {
 		v := IntVault{}
 		v.NewVaultClient()
-		v.revokeAccessor(readAccessor(path))
+		v.revokeAccessor(readLocalAccessor(path))
 	}
 
 	// write the accesor token for the app token
