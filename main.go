@@ -61,6 +61,10 @@ func main() {
 			v.revokeAccessor(v.selfTokenToRevoke)
 
 		}
+		if elem.Action == "stop" {
+			// TODO: if a stop event is observed cleanup files and revoke tokens for
+			// the stopped container
+		}
 	}
 
 }
