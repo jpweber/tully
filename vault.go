@@ -14,12 +14,14 @@ type IntVault struct {
 	permToken         string
 	permAccessor      string
 	selfTokenToRevoke string
+	selfActiveToken   string
 }
 
-func defaultWrappingLookupFunc(operation, path string) string {
-	// return os.Getenv(vaultapi.EnvVaultWrapTTL)
-	return "30s"
-}
+// TODO: @debug this is likely to be deprecated
+// func defaultWrappingLookupFunc(operation, path string) string {
+// 	// return os.Getenv(vaultapi.EnvVaultWrapTTL)
+// 	return "30s"
+// }
 
 func (v *IntVault) NewVaultClient() {
 	var err error
@@ -39,16 +41,38 @@ func (v *IntVault) tokenLookup(token string) {
 		if err != nil {
 			log.Println(err)
 		}
-		fmt.Printf("%+v\n", selfSecret)
-		v.setSelfTokenToRevoke(selfSecret)
+		// fmt.Printf("%+v\n", selfSecret)
+		v.setSelfAccessorToRevoke(selfSecret)
 	} else {
 		v.client.Auth().Token().Lookup(token)
 	}
 
 }
 
-func (v *IntVault) setSelfTokenToRevoke(secret *vaultapi.Secret) {
-	v.selfTokenToRevoke = secret.Data["id"].(string)
+func (v *IntVault) setSelfAccessorToRevoke(secret *vaultapi.Secret) {
+	v.selfTokenToRevoke = secret.Data["accessor"].(string)
+}
+
+func (v *IntVault) createSelfToken() {
+
+	policies := []string{"root"}
+
+	// generate token
+	secret, err := v.client.Auth().Token().Create(&vaultapi.TokenCreateRequest{
+		NumUses:     0,
+		DisplayName: "TULLY",
+		Policies:    policies,
+		NoParent:    true,
+	})
+	if err != nil {
+		log.Println(err)
+	}
+
+	// fmt.Printf("%+v\n", secret)
+	fmt.Println("My New Token", secret.Auth.ClientToken)
+
+	v.selfActiveToken = secret.Auth.ClientToken
+
 }
 
 func (v *IntVault) createPermToken(requestor string) {
@@ -114,6 +138,6 @@ func writeToCubby(temp, perm, appName string) {
 }
 
 func (v *IntVault) revokeAccessor(accessor string) {
-	log.Println("Going to revoke", accessor)
+	log.Println("Going to revoke with accessor", accessor)
 	v.client.Auth().Token().RevokeAccessor(accessor)
 }

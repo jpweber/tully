@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 )
 
@@ -56,6 +57,7 @@ func persistData(path, appName string, tokens map[string]string) {
 	if _, err := os.Stat(path + "/accessor"); err == nil {
 		v := IntVault{}
 		v.NewVaultClient()
+		log.Println("Revoking previous app token")
 		v.revokeAccessor(readLocalAccessor(path))
 	}
 
