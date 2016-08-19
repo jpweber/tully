@@ -1,3 +1,5 @@
+// TODO: figure out why TULLY doesn't have permission to revoke the app token using the apps accessor
+
 package main
 
 import (
@@ -65,11 +67,8 @@ func (v *IntVault) createSelfToken() {
 		NoParent:    true,
 	})
 	if err != nil {
-		log.Println(err)
+		log.Println("Error creating self token:", err)
 	}
-
-	// fmt.Printf("%+v\n", secret)
-	fmt.Println("My New Token", secret.Auth.ClientToken)
 
 	v.selfActiveToken = secret.Auth.ClientToken
 
@@ -79,17 +78,18 @@ func (v *IntVault) createPermToken(requestor string) {
 
 	policies := []string{"testapi_user"}
 
-	// generate token and stick cubby hole
+	// generate token to stick cubby hole
 	secret, err := v.client.Auth().Token().Create(&vaultapi.TokenCreateRequest{
 		NumUses:     0,
 		DisplayName: requestor,
 		Policies:    policies,
+		NoParent:    true, // TODO: @debug added this here to try and fix issues. May not actually need it
 	})
 	if err != nil {
-		log.Println(err)
+		log.Println("Error creating perm token:", err)
 	}
 
-	// fmt.Printf("%+v\n", secret)
+	fmt.Printf("%+v\n", secret) // TODO: @debug
 	fmt.Println("Perm Token", secret.Auth.ClientToken)
 	fmt.Println("Perm Accessor", secret.Auth.Accessor)
 	// fmt.Printf("%+v\n", secret.WrapInfo)
@@ -107,10 +107,10 @@ func (v *IntVault) createTempToken(requestor string) {
 		NumUses:     3,
 		DisplayName: requestor,
 		Policies:    policies,
-		TTL:         "60s",
+		TTL:         "120s",
 	})
 	if err != nil {
-		log.Println(err)
+		log.Println("Error creating temp token:", err)
 	}
 
 	v.tempToken = secret.Auth.ClientToken
@@ -137,7 +137,13 @@ func writeToCubby(temp, perm, appName string) {
 
 }
 
-func (v *IntVault) revokeAccessor(accessor string) {
+func (v *IntVault) revokeAccessor(accessor string) bool {
 	log.Println("Going to revoke with accessor", accessor)
-	v.client.Auth().Token().RevokeAccessor(accessor)
+	err := v.client.Auth().Token().RevokeAccessor(accessor)
+	if err != nil {
+		log.Println("Error revoking using accessor", err)
+		return false
+	}
+
+	return true
 }

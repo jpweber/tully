@@ -7,12 +7,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-// TODO: create mechanism for renewing and revoking my own tokens
-// generate tokens in the same way and write them out and revoke etc.
-// always be sure to read in new token before performing actions
-// my temp tokens need to not have a ttl so they can sit waiting for a time
-// that a container is launched on said host and can then use that token
-
 func main() {
 	log.Println("TULLY Keymaster service starting")
 	// setup the docker event listening
@@ -54,16 +48,28 @@ func main() {
 			log.Println("My new Token is", v.selfActiveToken)
 			// set token. This could be what we aread form ENV vars
 			// or what it has been reset to since first run
-
-			// TODO: this new token isn't actually being used need to figure this out
-			// when I start a second container its still using the token from the first run not the second one
-			// v.client.SetToken(v.selfActiveToken)
 			v.revokeAccessor(v.selfTokenToRevoke)
 
 		}
 		if elem.Action == "stop" {
 			// TODO: if a stop event is observed cleanup files and revoke tokens for
 			// the stopped container
+			// log.Println(elem.Actor.Attributes["name"], "Has Stopped")
+			// // read in accessor token of application
+			// filePath := fileLocation()
+			// filePath = filePath + elem.Actor.Attributes["name"]
+			// appAccessor := readLocalAccessor(fileLocation())
+
+			// // revoke token using accessor
+			// revokeSuccess := v.revokeAccessor(appAccessor)
+
+			// // on success of token revocation delete the directory container the token and accessor files
+			// if revokeSuccess {
+			// 	err := os.Remove(filePath)
+			// 	if err != nil {
+			// 		log.Println("Error removing app token dir", err)
+			// 	}
+			// }
 		}
 	}
 
